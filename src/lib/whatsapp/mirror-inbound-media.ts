@@ -1,6 +1,7 @@
 import { downloadMedia } from "./meta-api";
 import { extensionForMime } from "@/lib/media/filename";
 import { buildMediaPath, MEDIA_MAX_BYTES } from "@/lib/storage/upload-media";
+import { privateMediaUrl } from "@/lib/storage/private-media";
 
 /**
  * Copies inbound WhatsApp media into the `chat-media` bucket so it
@@ -142,7 +143,7 @@ export function mirrorFileName(args: {
 /**
  * Download the bytes from Meta and put them in `chat-media`.
  *
- * @returns the durable public URL, or `null` if the mirror was skipped
+ * @returns a durable authenticated app URL, or `null` if the mirror was skipped
  *          or failed — in which case the caller must fall back to the
  *          proxy URL.
  */
@@ -226,10 +227,7 @@ export async function mirrorInboundMedia(
       return null;
     }
 
-    const {
-      data: { publicUrl },
-    } = storage.from(MIRROR_BUCKET).getPublicUrl(path);
-    return publicUrl || null;
+    return privateMediaUrl(MIRROR_BUCKET, path);
   } catch (error) {
     console.warn(
       `[mirror-media] could not mirror ${mediaId}:`,

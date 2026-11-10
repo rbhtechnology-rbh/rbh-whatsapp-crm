@@ -36,6 +36,7 @@ import {
 } from '@/lib/whatsapp/interactive';
 import { decrypt, encrypt, isLegacyFormat } from '@/lib/whatsapp/encryption';
 import { supabaseAdmin } from '@/lib/flows/admin-client';
+import { mediaUrlForMeta } from '@/lib/storage/private-media-server';
 import {
   phoneVariants,
   isRecipientNotAllowedError,
@@ -346,6 +347,7 @@ export async function sendMessageToConversation(
   const attempt = async (phone: string): Promise<string> => {
     if (messageType === 'template') {
       const result = await sendTemplateMessage({
+        mediaContext: { db, accountId },
         phoneNumberId: config.phone_number_id,
         accessToken,
         to: phone,
@@ -364,7 +366,7 @@ export async function sendMessageToConversation(
         accessToken,
         to: phone,
         kind: messageType as MediaKind,
-        link: mediaUrl!,
+        link: await mediaUrlForMeta(db, accountId, mediaUrl!),
         caption: contentText || undefined,
         filename: filename || undefined,
         contextMessageId,

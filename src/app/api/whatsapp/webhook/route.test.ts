@@ -1,3 +1,4 @@
+// All names, 202-555-01xx numbers, identifiers and example.test URLs in this file are synthetic test fixtures.
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Shared, hoisted state the module mocks close over. Reset per test.
@@ -246,8 +247,8 @@ vi.mock('@/lib/whatsapp/meta-api', () => ({
 vi.mock('@/lib/contacts/dedupe', () => ({
   findExistingContact: vi.fn(async () => ({
     id: 'contact-1',
-    name: 'Ada',
-    phone: '15551230000',
+    name: 'Example User',
+    phone: '12025550101',
   })),
   isUniqueViolation: () => false,
 }))
@@ -289,13 +290,13 @@ const mockFindExistingContact = vi.mocked(findExistingContact)
 
 const TEXT_MESSAGE = {
   id: 'wamid.TEST1',
-  from: '15551230000',
+  from: '12025550101',
   timestamp: '1700000000',
   type: 'text',
   text: { body: 'hello' },
 }
 
-const LEGACY_CONTACTS = [{ wa_id: '15551230000', profile: { name: 'Ada' } }]
+const LEGACY_CONTACTS = [{ wa_id: '12025550101', profile: { name: 'Example User' } }]
 
 function signedPost(body: BodyInit) {
   return new Request('http://localhost/api/whatsapp/webhook', {
@@ -383,11 +384,11 @@ beforeEach(() => {
   h.state.recipientUpdates = []
   mockFindExistingContact.mockResolvedValue({
     id: 'contact-1',
-    name: 'Ada',
-    phone: '15551230000',
+    name: 'Example User',
+    phone: '12025550101',
   })
   mockGetMediaUrl.mockResolvedValue({
-    url: 'https://lookaside.fbsbx.com/whatsapp/abc',
+    url: 'https://media.example.test/abc',
     mimeType: 'image/jpeg',
     fileSize: 2048,
   })
@@ -463,7 +464,7 @@ describe('inbound webhook: template quick-reply buttons (#478)', () => {
   // legitimately misses and the reply is stored unquoted.
   const templateButtonTap = {
     id: 'wamid.BTN1',
-    from: '15551230000',
+    from: '12025550101',
     timestamp: '1700000000',
     type: 'button',
     button: { text: 'Yes, interested', payload: 'YES_INTERESTED' },
@@ -521,10 +522,10 @@ describe('inbound webhook: template quick-reply buttons (#478)', () => {
 describe('inbound webhook: inbound media is mirrored (#466)', () => {
   const IMAGE_MESSAGE = {
     id: 'wamid.IMG1',
-    from: '15551230000',
+    from: '12025550101',
     timestamp: '1700000000',
     type: 'image',
-    image: { id: '1234567890123456', mime_type: 'image/jpeg', caption: 'hi' },
+    image: { id: '1111111111111111', mime_type: 'image/jpeg', caption: 'hi' },
   }
 
   it('stores a durable bucket URL instead of the expiring proxy path', async () => {
@@ -533,11 +534,11 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
     expect(h.state.storageUploads).toHaveLength(1)
     expect(h.state.storageUploads[0].bucket).toBe('chat-media')
     expect(h.state.storageUploads[0].path).toBe(
-      'account-acc-1/inbound/1234567890123456-image-1700000000.jpg',
+      'account-acc-1/inbound/1111111111111111-image-1700000000.jpg',
     )
     expect(h.state.upsertCalls[0].row).toMatchObject({
       media_url:
-        'https://cdn.test/chat-media/account-acc-1/inbound/1234567890123456-image-1700000000.jpg',
+        '/api/private-media/chat-media/account-acc-1/inbound/1111111111111111-image-1700000000.jpg',
       // Meta's MIME type used to be discarded outright (`void mediaType`).
       media_type: 'image/jpeg',
     })
@@ -552,7 +553,7 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
     // the mirror failing must never cost us the message.
     expect(h.state.upsertCalls).toHaveLength(1)
     expect(h.state.upsertCalls[0].row).toMatchObject({
-      media_url: '/api/whatsapp/media/1234567890123456',
+      media_url: '/api/whatsapp/media/1111111111111111',
       media_type: 'image/jpeg',
     })
   })
@@ -563,20 +564,20 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
     await runWebhook(IMAGE_MESSAGE)
 
     expect(h.state.upsertCalls[0].row).toMatchObject({
-      media_url: '/api/whatsapp/media/1234567890123456',
+      media_url: '/api/whatsapp/media/1111111111111111',
     })
   })
 
   it('skips media larger than the bucket accepts, without downloading it', async () => {
     mockGetMediaUrl.mockResolvedValue({
-      url: 'https://lookaside.fbsbx.com/whatsapp/big',
+      url: 'https://media.example.test/big',
       mimeType: 'application/pdf',
       fileSize: 40 * 1024 * 1024,
     })
 
     await runWebhook({
       id: 'wamid.DOC1',
-      from: '15551230000',
+      from: '12025550101',
       timestamp: '1700000000',
       type: 'document',
       document: {
@@ -596,7 +597,7 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
 
   it("names the object after a document's own filename", async () => {
     mockGetMediaUrl.mockResolvedValue({
-      url: 'https://lookaside.fbsbx.com/whatsapp/doc',
+      url: 'https://media.example.test/doc',
       mimeType: 'application/pdf',
       fileSize: 4096,
     })
@@ -607,11 +608,11 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
 
     await runWebhook({
       id: 'wamid.DOC2',
-      from: '15551230000',
+      from: '12025550101',
       timestamp: '1700000000',
       type: 'document',
       document: {
-        id: '1234567890123456',
+        id: '1111111111111111',
         mime_type: 'application/pdf',
         filename: 'invoice.pdf',
         caption: 'have a look',
@@ -619,7 +620,7 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
     })
 
     expect(h.state.storageUploads[0].path).toBe(
-      'account-acc-1/inbound/1234567890123456-invoice.pdf',
+      'account-acc-1/inbound/1111111111111111-invoice.pdf',
     )
   })
 
@@ -631,7 +632,7 @@ describe('inbound webhook: inbound media is mirrored (#466)', () => {
     expect(mockDownloadMedia).not.toHaveBeenCalled()
     expect(h.state.storageUploads).toHaveLength(0)
     expect(h.state.upsertCalls[0].row).toMatchObject({
-      media_url: '/api/whatsapp/media/1234567890123456',
+      media_url: '/api/whatsapp/media/1111111111111111',
       // Still recorded — the MIME type costs nothing and makes the
       // download name right even for proxied media.
       media_type: 'image/jpeg',
@@ -683,8 +684,8 @@ describe('inbound webhook: after() awaits automations (#368)', () => {
 
 const USERNAME_ONLY_MESSAGE = {
   id: 'wamid.BSUID1',
-  from_user_id: 'US.13491208655302741918',
-  from_parent_user_id: 'US.ENT.11815799212886844830',
+  from_user_id: 'US.11111111111111111111',
+  from_parent_user_id: 'US.ENT.22222222222222222222',
   timestamp: '1700000000',
   type: 'text',
   text: { body: 'does it come in another color?' },
@@ -692,9 +693,9 @@ const USERNAME_ONLY_MESSAGE = {
 
 const USERNAME_ONLY_CONTACTS = [
   {
-    profile: { name: 'Sheena Nelson', username: 'realsheenanelson' },
-    user_id: 'US.13491208655302741918',
-    parent_user_id: 'US.ENT.11815799212886844830',
+    profile: { name: 'Example Person One', username: 'example_test_user_one' },
+    user_id: 'US.11111111111111111111',
+    parent_user_id: 'US.ENT.22222222222222222222',
   },
 ]
 
@@ -710,10 +711,10 @@ describe('inbound webhook: business-scoped user IDs (#519)', () => {
     expect(h.state.contactInserts[0]).toMatchObject({
       account_id: 'acc-1',
       phone: '',
-      wa_user_id: 'US.13491208655302741918',
-      wa_parent_user_id: 'US.ENT.11815799212886844830',
-      wa_username: 'realsheenanelson',
-      name: 'Sheena Nelson',
+      wa_user_id: 'US.11111111111111111111',
+      wa_parent_user_id: 'US.ENT.22222222222222222222',
+      wa_username: 'example_test_user_one',
+      name: 'Example Person One',
     })
     // The message still lands in the thread.
     expect(h.state.upsertCalls).toHaveLength(1)
@@ -734,11 +735,11 @@ describe('inbound webhook: business-scoped user IDs (#519)', () => {
     // The row the first message created.
     h.state.contactByWaUserId = {
       id: 'contact-bsuid',
-      name: 'Sheena Nelson',
+      name: 'Example Person One',
       phone: '',
-      wa_user_id: 'US.13491208655302741918',
-      wa_parent_user_id: 'US.ENT.11815799212886844830',
-      wa_username: 'realsheenanelson',
+      wa_user_id: 'US.11111111111111111111',
+      wa_parent_user_id: 'US.ENT.22222222222222222222',
+      wa_username: 'example_test_user_one',
     }
     mockFindExistingContact.mockResolvedValue(null)
 
@@ -758,24 +759,24 @@ describe('inbound webhook: business-scoped user IDs (#519)', () => {
     // this row instead of forking a new one.
     mockFindExistingContact.mockResolvedValue({
       id: 'contact-1',
-      name: 'Pablo',
-      phone: '16505551234',
+      name: 'Example Person Two',
+      phone: '12025550102',
     })
 
     await runWebhook(
       {
         id: 'wamid.BOTH',
-        from: '16505551234',
-        from_user_id: 'US.13491208655302741918',
+        from: '12025550102',
+        from_user_id: 'US.11111111111111111111',
         timestamp: '1700000000',
         type: 'text',
         text: { body: 'hi' },
       },
       [
         {
-          profile: { name: 'Pablo', username: 'pablomorales' },
-          wa_id: '16505551234',
-          user_id: 'US.13491208655302741918',
+          profile: { name: 'Example Person Two', username: 'example_test_user_two' },
+          wa_id: '12025550102',
+          user_id: 'US.11111111111111111111',
         },
       ],
     )
@@ -783,8 +784,8 @@ describe('inbound webhook: business-scoped user IDs (#519)', () => {
     expect(h.state.contactInserts).toHaveLength(0)
     expect(h.state.contactUpdates).toHaveLength(1)
     expect(h.state.contactUpdates[0]).toMatchObject({
-      wa_user_id: 'US.13491208655302741918',
-      wa_username: 'pablomorales',
+      wa_user_id: 'US.11111111111111111111',
+      wa_username: 'example_test_user_two',
     })
     // The number we already had is left alone.
     expect(h.state.contactUpdates[0]).not.toHaveProperty('phone')
@@ -793,23 +794,23 @@ describe('inbound webhook: business-scoped user IDs (#519)', () => {
   it('fills in the phone once Meta finally discloses it', async () => {
     h.state.contactByWaUserId = {
       id: 'contact-bsuid',
-      name: 'Sheena Nelson',
+      name: 'Example Person One',
       phone: '',
-      wa_user_id: 'US.13491208655302741918',
-      wa_username: 'realsheenanelson',
+      wa_user_id: 'US.11111111111111111111',
+      wa_username: 'example_test_user_one',
     }
 
     await runWebhook(
       {
         ...USERNAME_ONLY_MESSAGE,
         id: 'wamid.BSUID3',
-        from: '16505551234',
+        from: '12025550102',
       },
       USERNAME_ONLY_CONTACTS,
     )
 
     expect(h.state.contactUpdates).toHaveLength(1)
-    expect(h.state.contactUpdates[0]).toMatchObject({ phone: '16505551234' })
+    expect(h.state.contactUpdates[0]).toMatchObject({ phone: '12025550102' })
   })
 
   it('drops a delivery that carries neither key rather than inventing a contact', async () => {
@@ -840,7 +841,7 @@ describe('inbound webhook: business-scoped user IDs (#519)', () => {
     expect(mockFindExistingContact).toHaveBeenCalledWith(
       expect.anything(),
       'acc-1',
-      '15551230000',
+      '12025550101',
     )
     expect(h.state.contactInserts).toHaveLength(0)
     expect(h.state.contactUpdates).toHaveLength(0)
@@ -855,11 +856,11 @@ describe('inbound webhook: contact name backfill (#519 regression guard)', () =>
     // agent typed on the contact — on every single inbound message.
     mockFindExistingContact.mockResolvedValue({
       id: 'contact-1',
-      name: 'Ada (VIP, calls Mondays)',
-      phone: '15551230000',
+      name: 'Example User (VIP, calls Mondays)',
+      phone: '12025550101',
     })
 
-    await runWebhook(TEXT_MESSAGE, [{ wa_id: '15551230000', profile: {} }])
+    await runWebhook(TEXT_MESSAGE, [{ wa_id: '12025550101', profile: {} }])
 
     expect(h.state.contactUpdates).toHaveLength(0)
   })
@@ -867,12 +868,12 @@ describe('inbound webhook: contact name backfill (#519 regression guard)', () =>
   it('does adopt a username when that is all Meta gives us', async () => {
     mockFindExistingContact.mockResolvedValue({
       id: 'contact-1',
-      name: '15551230000',
-      phone: '15551230000',
+      name: '12025550101',
+      phone: '12025550101',
     })
 
     await runWebhook(TEXT_MESSAGE, [
-      { wa_id: '15551230000', profile: { username: 'ada' } },
+      { wa_id: '12025550101', profile: { username: 'ada' } },
     ])
 
     expect(h.state.contactUpdates[0]).toMatchObject({ name: 'ada' })
@@ -917,7 +918,7 @@ describe('status webhook: failed statuses keep Meta\'s reason (#535)', () => {
     id: 'wamid.OUT1',
     status: 'failed',
     timestamp: '1700000100',
-    recipient_id: '15551230000',
+    recipient_id: '12025550101',
     errors: [
       {
         code: 131049,
@@ -1007,7 +1008,7 @@ describe('status webhook: failed statuses keep Meta\'s reason (#535)', () => {
         id: 'wamid.OUT1',
         status: 'delivered',
         timestamp: '1700000100',
-        recipient_id: '15551230000',
+        recipient_id: '12025550101',
       })
     } finally {
       warn.mockRestore()
@@ -1029,7 +1030,7 @@ describe('status webhook: failed statuses keep Meta\'s reason (#535)', () => {
       id: 'wamid.OUT1',
       status: 'delivered',
       timestamp: '1700000100',
-      recipient_id: '15551230000',
+      recipient_id: '12025550101',
     })
 
     expect(h.applyMessageStatus.mock.calls[0][2]).toMatchObject({
@@ -1113,7 +1114,7 @@ describe('status webhook: scoped to the receiving number', () => {
     id: 'wamid.OUT1',
     status: 'delivered',
     timestamp: '1700000100',
-    recipient_id: '15551230000',
+    recipient_id: '12025550101',
   }
 
   it('resolves the account from metadata.phone_number_id before touching messages', async () => {

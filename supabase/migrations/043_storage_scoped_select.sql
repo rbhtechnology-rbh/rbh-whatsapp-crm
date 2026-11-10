@@ -1,4 +1,5 @@
 DROP POLICY IF EXISTS "Avatars are publicly readable" ON storage.objects;
+UPDATE storage.buckets SET public = false WHERE id = 'avatars';
 DROP POLICY IF EXISTS "Flow media is publicly readable" ON storage.objects;
 DROP POLICY IF EXISTS "Chat media is publicly readable" ON storage.objects;
 
@@ -8,7 +9,11 @@ CREATE POLICY "Users can read their own avatar"
   TO authenticated
   USING (
     bucket_id = 'avatars'
-    AND auth.uid()::text = (storage.foldername(name))[1]
+    AND EXISTS (
+      SELECT 1 FROM public.profiles p
+      WHERE p.user_id::text = (storage.foldername(name))[1]
+        AND public.is_account_member(p.account_id)
+    )
   );
 
 DROP POLICY IF EXISTS "Members can read flow media" ON storage.objects;

@@ -644,3 +644,17 @@ $$;
 ALTER FUNCTION public.dashboard_overview(INTEGER, TEXT) OWNER TO postgres;
 REVOKE ALL ON FUNCTION public.dashboard_overview(INTEGER, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.dashboard_overview(INTEGER, TEXT) TO authenticated;
+-- RBH security hardening: triggers are not directly callable, and
+-- account management RPCs are unavailable to anonymous users.
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.notify_conversation_assigned() FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.is_account_member(uuid, public.account_role_enum) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_account_member(uuid, public.account_role_enum) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.redeem_invitation(text) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.remove_account_member(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.set_member_role(uuid, public.account_role_enum) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.transfer_account_ownership(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.touch_presence(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.touch_presence(text) TO authenticated, service_role;
+ALTER FUNCTION public.update_ai_configs_updated_at() SET search_path = public, pg_temp;
+ALTER FUNCTION public.update_ai_knowledge_documents_updated_at() SET search_path = public, pg_temp;

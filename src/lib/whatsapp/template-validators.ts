@@ -21,6 +21,7 @@ import type {
   TemplateSampleValues,
 } from '@/types';
 import { getT } from '@/lib/i18n/translate';
+import { parsePrivateMediaUrl } from '@/lib/storage/private-media';
 
 const t = getT('Validation.templates');
 
@@ -185,7 +186,7 @@ export function validateHeader(
       t('mediaHeaderRequiresSource', { type: header_type }),
     );
   }
-  if (header_media_url) {
+  if (header_media_url && !parsePrivateMediaUrl(header_media_url)) {
     try {
       const u = new URL(header_media_url);
       if (u.protocol !== 'https:' && u.protocol !== 'http:') {

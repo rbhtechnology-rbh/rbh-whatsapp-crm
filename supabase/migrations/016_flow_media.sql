@@ -10,10 +10,9 @@
 --      DB.
 --
 --   2. `flow-media` Supabase Storage bucket where the builder uploads
---      the file the customer will receive. Public bucket so Meta can
---      pull the URL without auth — same trade-off as the avatars
---      bucket (see migration 008). Per-user RLS on writes scopes the
---      bucket so one tenant can't read/overwrite another's media.
+--      the file the customer will receive. The bucket is private;
+--      account-scoped reads and short-lived access must be configured
+--      before media can be sent or viewed.
 --
 --      Path convention:
 --        flow-media/{auth.uid()}/<timestamp>-<basename>.<ext>
@@ -58,7 +57,7 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES (
   'flow-media',
   'flow-media',
-  TRUE,
+  FALSE,
   16777216, -- 16 MB (Meta video cap; documents/images fit under this)
   ARRAY[
     -- Images
@@ -85,9 +84,9 @@ SET
 -- Policies live on storage.objects. Same drop-then-create pattern as
 -- migration 008 (no CREATE POLICY IF NOT EXISTS in Postgres).
 DROP POLICY IF EXISTS "Flow media is publicly readable" ON storage.objects;
-CREATE POLICY "Flow media is publicly readable"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'flow-media');
+CREATE POLICY "Users can read their own flow media"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'flow-media' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 DROP POLICY IF EXISTS "Users can upload their own flow media" ON storage.objects;
 CREATE POLICY "Users can upload their own flow media"

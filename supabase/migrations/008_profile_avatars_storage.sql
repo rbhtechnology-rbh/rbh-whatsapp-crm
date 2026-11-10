@@ -16,7 +16,7 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES (
   'avatars',
   'avatars',
-  TRUE,
+  FALSE,
   2097152, -- 2 MB
   ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']
 )
@@ -30,9 +30,10 @@ SET
 -- has no CREATE POLICY IF NOT EXISTS, and we want this migration to
 -- re-run cleanly.
 DROP POLICY IF EXISTS "Avatars are publicly readable" ON storage.objects;
-CREATE POLICY "Avatars are publicly readable"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'avatars');
+DROP POLICY IF EXISTS "Users can read their own avatar" ON storage.objects;
+CREATE POLICY "Users can read their own avatar"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
 CREATE POLICY "Users can upload their own avatar"

@@ -36,12 +36,23 @@
 CREATE OR REPLACE FUNCTION public._bcast_bump(bid UUID, col TEXT, delta INT)
 RETURNS VOID AS $$
 BEGIN
+  IF col NOT IN ('sent_count', 'delivered_count', 'read_count', 'replied_count', 'failed_count') THEN
+    RAISE EXCEPTION 'Invalid broadcast counter';
+  END IF;
   EXECUTE format(
     'UPDATE broadcasts SET %I = GREATEST(0, %I + $1), updated_at = NOW() WHERE id = $2',
     col, col
   ) USING delta, bid;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- These helpers run as the function owner. Only the database trigger and
+-- trusted backend should be able to invoke them, not arbitrary API callers.
+REVOKE ALL ON FUNCTION public._bcast_bump(UUID, TEXT, INTEGER) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public._bcast_bump(UUID, TEXT, INTEGER) TO service_role;
+REVOKE ALL ON FUNCTION public.recompute_broadcast_counts(UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.recompute_broadcast_counts(UUID) TO service_role;
+REVOKE ALL ON FUNCTION public.broadcast_recipient_aggregate_trigger() FROM PUBLIC, anon, authenticated;
 
 -- Columns this recipient's status contributes to.
 CREATE OR REPLACE FUNCTION public._bcast_cols_for_status(s TEXT)
@@ -56,7 +67,7 @@ BEGIN
   IF s = 'failed'    THEN RETURN ARRAY['failed_count']; END IF;
   RETURN ARRAY[]::TEXT[];
 END;
-$$ LANGUAGE plpgsql IMMUTABLE;
+$$ LANGUAGE plpgsql IMMUTABLE SET search_path = public, pg_temp;
 
 -- Replace the trigger body with the incremental version.
 CREATE OR REPLACE FUNCTION public.broadcast_recipient_aggregate_trigger()

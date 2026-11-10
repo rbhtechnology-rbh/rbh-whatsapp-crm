@@ -16,6 +16,7 @@ import {
 import { resolveContactSendTarget } from '@/lib/whatsapp/wa-identity'
 import { assertConversationInAccount } from '@/lib/whatsapp/conversation-scope'
 import { supabaseAdmin } from './admin-client'
+import { mediaUrlForMeta } from '@/lib/storage/private-media-server'
 import { getT } from '@/lib/i18n/translate'
 
 const t = getT('LibErrors')
@@ -243,7 +244,7 @@ export async function engineSendMedia(
       accessToken,
       to: phone,
       kind: args.kind,
-      link: args.link,
+      link: await mediaUrlForMeta(db, args.accountId, args.link),
       caption: args.caption,
       filename: args.filename,
     })
