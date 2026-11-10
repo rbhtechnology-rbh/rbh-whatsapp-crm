@@ -176,6 +176,7 @@ async function sendViaMeta(input: SendInput): Promise<{ whatsapp_message_id: str
   const attempt = async (phone: string): Promise<string> => {
     if (input.kind === 'template') {
       const r = await sendTemplateMessage({
+        mediaContext: { db, accountId: input.accountId },
         phoneNumberId: config.phone_number_id,
         accessToken,
         to: phone,

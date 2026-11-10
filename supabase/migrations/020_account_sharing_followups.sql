@@ -66,6 +66,12 @@ CREATE INDEX IF NOT EXISTS idx_flows_account_active
 DROP POLICY IF EXISTS "Users can upload their own flow media" ON storage.objects;
 DROP POLICY IF EXISTS "Users can update their own flow media" ON storage.objects;
 DROP POLICY IF EXISTS "Users can delete their own flow media" ON storage.objects;
+DROP POLICY IF EXISTS "Members can read flow media" ON storage.objects;
+CREATE POLICY "Members can read flow media" ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'flow-media' AND EXISTS (
+    SELECT 1 FROM public.profiles p WHERE p.user_id = auth.uid()
+      AND ('account-' || p.account_id::text) = (storage.foldername(name))[1]
+  ));
 
 DROP POLICY IF EXISTS "Members can upload flow media" ON storage.objects;
 CREATE POLICY "Members can upload flow media"

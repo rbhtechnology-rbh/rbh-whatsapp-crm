@@ -396,6 +396,8 @@ END;
 $$;
 
 ALTER FUNCTION public.handle_new_user() OWNER TO postgres;
+REVOKE EXECUTE ON FUNCTION public.handle_new_user() FROM PUBLIC, anon, authenticated;
+ALTER FUNCTION public.update_updated_at_column() SET search_path = public, pg_temp;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users

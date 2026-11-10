@@ -166,7 +166,7 @@ RETURNS TABLE (id uuid, content text, rank real) AS $$
     AND c.fts @@ plainto_tsquery('simple', p_query)
   ORDER BY rank DESC
   LIMIT GREATEST(p_match_count, 0);
-$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public;
 
 -- Semantic: cosine distance against the query embedding. Only rows
 -- that actually have an embedding participate.
@@ -190,7 +190,7 @@ RETURNS TABLE (id uuid, content text, distance real) AS $$
     AND c.embedding IS NOT NULL
   ORDER BY c.embedding <=> p_query_embedding::vector(1536)
   LIMIT GREATEST(p_match_count, 0);
-$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public;
 
 -- Lock down EXECUTE (mirrors migrations 018 / 025). These are
 -- SECURITY DEFINER and would otherwise default to PUBLIC — i.e. the

@@ -1,3 +1,9 @@
+# RBH dedicated-client setup
+
+For RBH's one-time setup and maintenance offering, start with the
+[dedicated client installation and acceptance guide](docs/rbh-client-installation.md).
+The RBH modifications are based on the MIT-licensed WACRM project below.
+
 # wacrm — CRM Template for WhatsApp
 
 > Self-hostable CRM template for WhatsApp® — shared inbox, contacts,

@@ -189,6 +189,7 @@ export async function POST(request: Request) {
       for (const variant of variants) {
         try {
           const result = await sendTemplateMessage({
+            mediaContext: { db: supabase, accountId },
             phoneNumberId: config.phone_number_id,
             accessToken,
             to: variant,

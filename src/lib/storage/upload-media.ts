@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { getT } from "@/lib/i18n/translate";
+import { privateMediaUrl } from "@/lib/storage/private-media";
 
 const t = getT("LibErrors");
 
@@ -80,15 +81,15 @@ export function buildMediaPath(
 }
 
 export interface UploadAccountMediaResult {
-  /** Public URL Meta can fetch at send time. */
+  /** Stable authenticated app URL, resolved to a temporary link when sent. */
   publicUrl: string;
   /** Storage object path (account-scoped). */
   path: string;
 }
 
 /**
- * Upload a file to an account-scoped Storage bucket and return its public
- * URL. Throws with a user-facing message on auth / account-resolution /
+ * Upload a file to a private account-scoped Storage bucket and return its
+ * authenticated app URL. Throws on auth / account-resolution /
  * upload failure — callers surface it via a toast.
  *
  * Size validation is the caller's responsibility (limits can differ per
@@ -128,17 +129,13 @@ export async function uploadAccountMedia(
   });
   if (upErr) throw new Error(upErr.message);
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from(bucket).getPublicUrl(path);
-
-  return { publicUrl, path };
+  return { publicUrl: privateMediaUrl(bucket, path), path };
 }
 
 /**
  * Delete a previously-uploaded object. Used to GC media that was staged
  * (uploaded) but never sent — a cancelled draft or a failed Meta send —
- * so abandoned attachments don't accumulate in the public bucket. The
+ * so abandoned attachments don't accumulate in the bucket. The
  * DELETE is gated by the same account-scoped RLS policy as the upload,
  * so a caller can only remove objects under their own account folder.
  *

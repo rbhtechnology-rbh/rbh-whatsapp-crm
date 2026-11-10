@@ -486,12 +486,15 @@ export async function sendMediaMessage(
 }
 
 import type { MessageTemplate } from '@/types'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { mediaUrlForMeta } from '@/lib/storage/private-media-server'
 import {
   buildSendComponents,
   type SendTimeParams,
 } from './template-send-builder'
 
 export interface SendTemplateMessageArgs {
+  mediaContext?: { db: SupabaseClient; accountId: string }
   phoneNumberId: string
   accessToken: string
   to: string
@@ -546,6 +549,7 @@ export async function sendTemplateMessage(
     template,
     messageParams,
     contextMessageId,
+    mediaContext,
   } = args
   const url = `${META_API_BASE}/${phoneNumberId}/messages`
 
@@ -555,12 +559,19 @@ export async function sendTemplateMessage(
   }
 
   if (template) {
+    const headerUrl = messageParams?.headerMediaUrl ?? template.header_media_url
+    if (headerUrl?.startsWith('/api/private-media/') && !mediaContext) {
+      throw new Error('Private template media requires account context')
+    }
+    const resolvedHeader = headerUrl && mediaContext
+      ? await mediaUrlForMeta(mediaContext.db, mediaContext.accountId, headerUrl)
+      : headerUrl
     const components = buildSendComponents(template, {
       // Legacy callers pass body values in `params`; fold them into
       // `messageParams.body` so the new path covers them too.
       body: messageParams?.body ?? params,
       headerText: messageParams?.headerText,
-      headerMediaUrl: messageParams?.headerMediaUrl,
+      headerMediaUrl: resolvedHeader ?? undefined,
       headerMediaId: messageParams?.headerMediaId,
       buttonParams: messageParams?.buttonParams,
     })

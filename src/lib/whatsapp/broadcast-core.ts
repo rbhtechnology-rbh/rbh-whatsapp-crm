@@ -62,6 +62,7 @@ interface PlannedRecipient {
 }
 
 export interface BroadcastPlan {
+  accountId: string;
   broadcastId: string;
   templateName: string;
   templateLanguage: string;
@@ -238,6 +239,7 @@ export async function createBroadcast(
   );
 
   return {
+    accountId,
     broadcastId,
     templateName,
     templateLanguage: resolvedTemplate.language,
@@ -275,6 +277,7 @@ export async function deliverBroadcast(
     for (const variant of variants) {
       try {
         const result = await sendTemplateMessage({
+          mediaContext: { db, accountId: plan.accountId },
           phoneNumberId: plan.phoneNumberId,
           accessToken: plan.accessToken,
           to: variant,

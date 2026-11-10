@@ -16,6 +16,7 @@ import {
 } from '@/lib/whatsapp/template-validators'
 import { buildMetaTemplatePayload } from '@/lib/whatsapp/template-components'
 import { ensureMediaHeaderHandle } from '@/lib/whatsapp/template-header-handle'
+import { mediaUrlForMeta } from '@/lib/storage/private-media-server'
 import { canEditTemplateCategory } from '@/lib/whatsapp/template-category-edit'
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from '@/lib/rate-limit'
 import { getT } from '@/lib/i18n/translate'
@@ -162,7 +163,9 @@ export async function PATCH(
       // handle on every edit (Meta replaces components wholesale). Derive
       // from header_media_url.
       try {
-        await ensureMediaHeaderHandle(payload, accessToken)
+        const uploadPayload = { ...payload, header_media_url: payload.header_media_url ? await mediaUrlForMeta(supabase, accountId, payload.header_media_url) : undefined }
+        await ensureMediaHeaderHandle(uploadPayload, accessToken)
+        payload.header_handle = uploadPayload.header_handle
       } catch (e) {
         return NextResponse.json(
           { error: e instanceof Error ? e.message : t('templates.headerUploadFailed') },

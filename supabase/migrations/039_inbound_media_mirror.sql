@@ -75,7 +75,7 @@ COMMENT ON COLUMN whatsapp_config.mirror_inbound_media IS
 -- 3. chat-media: allow the inbound-only MIME types
 --
 -- Same UPSERT shape as migration 023 so the two stay comparable. Only
--- the allowed_mime_types array changes; the bucket stays public with
+-- the allowed_mime_types array changes; the bucket stays private with
 -- the same 16 MB ceiling, and the storage RLS policies from 023 are
 -- untouched (the webhook writes with the service role, which bypasses
 -- them, but a bucket-level MIME rejection applies to it all the same).
@@ -84,7 +84,7 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES (
   'chat-media',
   'chat-media',
-  TRUE,
+  FALSE,
   16777216, -- 16 MB, unchanged from 023
   ARRAY[
     -- Images
